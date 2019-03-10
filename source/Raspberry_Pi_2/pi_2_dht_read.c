@@ -62,16 +62,18 @@ int pi_2_dht_read(int type, int pin, float* humidity, float* temperature) {
 
   // Set pin to output.
   pi_2_mmio_set_output(pin);
+  busy_wait_milliseconds(50);
 
   // The next calls are timing critical and care should be taken
   // to ensure no unnecssary work is done below.
 
   // Set pin low for ~20 milliseconds.
   pi_2_mmio_set_low(pin);
-  busy_wait_milliseconds(20);
+  busy_wait_milliseconds(50);
 
   // Set pin at input.
   pi_2_mmio_set_input(pin);
+  busy_wait_milliseconds(50);
 
   // Now, the pin will be pulled up again to VCC and
   // DHT will take over and pull it low (it may start low, so we wait for it to go high),
@@ -90,6 +92,7 @@ int pi_2_dht_read(int type, int pin, float* humidity, float* temperature) {
     while (!pi_2_mmio_input(pin)) {
       if (++count>= DHT_MAXCOUNT) {
         // Timeout waiting for response.
+        printf("Timeout at line 95");
         set_default_priority();
         return DHT_ERROR_TIMEOUT;
       }
@@ -101,6 +104,8 @@ int pi_2_dht_read(int type, int pin, float* humidity, float* temperature) {
     while (pi_2_mmio_input(pin)) {
       if (++count>= DHT_MAXCOUNT) {
         // Timeout waiting for response.
+        /*  may be useful for debugging */
+        printf("Timeout at line 108");
         set_default_priority();
         return DHT_ERROR_TIMEOUT;
       }
@@ -126,13 +131,13 @@ int pi_2_dht_read(int type, int pin, float* humidity, float* temperature) {
   }
   threshold /= DHT_PULSES-1;
 
-  /*  may be useful for debugging 
+  /*  may be useful for debugging */
   printf("thrh: %d\n", threshold);
   for (int i=0; i<DHT_PULSES*2; i++) {
      printf("%d: %d, ", i, pulseCounts[i]);
   }
   printf("\n");
-  */
+  
 
   // Interpret each high pulse as a 0 or 1 by comparing it to the 50us reference.
   // If the count is less than 50us it must be a ~26us 0 pulse, and if it's higher
@@ -149,7 +154,7 @@ int pi_2_dht_read(int type, int pin, float* humidity, float* temperature) {
   }
 
   // Useful debug info:
-  // printf("Data: 0x%x 0x%x 0x%x 0x%x 0x%x\n", data[0], data[1], data[2], data[3], data[4]);
+   printf("Data: 0x%x 0x%x 0x%x 0x%x 0x%x\n", data[0], data[1], data[2], data[3], data[4]);
 
   // Verify checksum of received data.
   if (data[4] == ((data[0] + data[1] + data[2] + data[3]) & 0xFF)) {
